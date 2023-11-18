@@ -1,10 +1,5 @@
 const users = [
     {
-        "email": "salaheddin87@gmail.com",
-        "password": "$2b$10$WNgx8xz5l0scAuJGG9C1r.VIULw838Qu58lvZQX2HDRYcUCCI8MXy",
-        "group": "Admin"
-    },
-    {
         "email": "john.doe@example.com",
         "password": "password123",
         "group": "Moderator"
