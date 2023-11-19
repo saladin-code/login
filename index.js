@@ -12,11 +12,6 @@ app.use("/users", userRoute)
 
 app.use("/posts", posts)
 
-
-app.get("/", (req, res) => {
-    res.send("Hi I am here")
-})
-
 app.listen(5000, () => {
-    console.log("Now running on port 5000")
+    console.log("Now Backend running on port 5000")
 })
