@@ -1,36 +1,57 @@
-const router = require("express").Router()
+const express = require("express")
+const router = express.Router()
+
 const { check, validationResult } = require("express-validator")
-const Users = require('./users')
-const { users } = Users.users
+
 const bcrypt = require("bcrypt")
 const JWT = require("jsonwebtoken")
+
+// const Users = require('./users')
+// const { users } = Users.users
+
+const User = require('../models/User')
+
 require('dotenv').config();
 
-// Greife auf die Umgebungsvariablen zu
 const payload = process.env.PAYLOAD_KEY;
 
-
-
 router.post("/signup", [
-    check("email", "Geben Sie bitte eine valide email adresse an!").isEmail(),
-    check("password", "Geben Sie bitte ein valides password an!").isLength({ min: 6 }),
-], async (req, res) => {
+    check("email", "Geben Sie bitte eine valide email adresse an!").trim().isEmail(),
+    check("password", "Geben Sie bitte ein valides password an!").trim()
+    .isLength({ min: 12 }).withMessage('Passwort muss mindestens 12 Zeichen lang sein.')
+    .matches(/[a-z]/).withMessage('Passwort muss mindestens einen Kleinbuchstaben enthalten.')
+    .matches(/[A-Z]/).withMessage('Passwort muss mindestens einen Grossbuchstaben enthalten.')
+    .matches(/[0-9]/).withMessage('Passwort muss mindestens eine Zahl enthalten.')
+    .matches(/[^a-zA-Z0-9]/).withMessage('Passwort muss mindestens ein Sonderzeichen enthalten.'),
+], 
+async (req, res) => {
     const { password, email } = req.body
 
-    //Validiert den Input falls er nicht valide ist wird ein error zurückgegeben
     const errors = validationResult(req)
     if (!errors.isEmpty())
         return res.status(400).json({ errors: errors.array() })
 
+        // res.json({
+        //     "msg": "Test!",
+        //     "email": password
+        // })
 
-    //Validiert ob ein user bereits existiert
-    let user = users.find((user) => {
-        return user.email === email
+    let user = User.find({ email }).then(result => {
+        console.log(result)
+        return result
+    }).catch(err => {
+        console.log(err)
+        res.json({ "msg": "Fehler beim erstellen des Users!" })
+    })
+    console.log(user)
+    res.json({
+        "msg": "Test!",
+        "user": user
     })
 
+    return
     if (user)
-         res.status(400).json({ errors: [{ "msg": "Email Adresse ist breits vergeben!" }] })
-
+        res.status(400).json({ errors: [{ "msg": "Email Adresse ist breits vergeben!" }] })
     else {
         let hasdedpassword = await bcrypt.hash(password, 10);
 
@@ -55,137 +76,69 @@ router.post("/signup", [
 })
 
 
-router.post("/login", [
-    check("email", "Geben Sie bitte eine valide email adresse an!").isEmail(),
-    check("password", "Geben Sie bitte ein valides password an!").isLength({ min: 6 }),
-], async (req, res) => {
+// router.post("/login", [
+//     check("email", "Geben Sie bitte eine valide email adresse an!").isEmail(),
+//     check("password", "Geben Sie bitte ein valides password an!").isLength({ min: 6 }),
+// ], async (req, res) => {
 
-    const { password, email } = req.body
-    //Validiert den Input falls er nicht valide ist wird ein error zurückgegeben
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-        return res.status(400).json({
-            errors: errors.array()
-        })
-    }
+//     const { password, email } = req.body
+//     //Validiert den Input falls er nicht valide ist wird ein error zurückgegeben
+//     const errors = validationResult(req)
+//     if (!errors.isEmpty()) {
+//         return res.status(400).json({
+//             errors: errors.array()
+//         })
+//     }
 
-    let user = users.find((user) => {
-        return user.email === email
-    })
+//     let user = users.find((user) => {
+//         return user.email === email
+//     })
 
-    if (!user) {
-        res.status(400).json({
-            errors: [
-                {
-                    "msg": "Invalid Credentials!",
-                }
-            ]
-        })
-    }
-    else {
+//     if (!user) {
+//         res.status(400).json({
+//             errors: [
+//                 {
+//                     "msg": "Invalid Credentials!",
+//                 }
+//             ]
+//         })
+//     }
+//     else {
 
-        let isMatched = await bcrypt.compare(password, user.password);
+//         let isMatched = await bcrypt.compare(password, user.password);
 
-        if (!isMatched) {
-            res.status(400).json({
-                errors: [
-                    {
+//         if (!isMatched) {
+//             res.status(400).json({
+//                 errors: [
+//                     {
 
-                        "msg": "Login fehlgeschlagen!",
-                    }
-                ]
-            })
-        }
-        else {
-            const token = await JWT.sign({
-                email
-            }, payload, {
-                expiresIn: "24h"
-            })
+//                         "msg": "Login fehlgeschlagen!",
+//                     }
+//                 ]
+//             })
+//         }
+//         else {
+//             const token = await JWT.sign({
+//                 email
+//             }, payload, {
+//                 expiresIn: "24h"
+//             })
 
-            res.json({
-                "msg": "User wurde erfolgreich eingeloggt!",
-                token
-            })
-        }
+//             res.json({
+//                 "msg": "User wurde erfolgreich eingeloggt!",
+//                 token
+//             })
+//         }
 
-    }
-
-
-})
+//     }
 
 
+// })
 
 
 
-// erstelle mir eine route um einen user zu löschen
-router.delete("/delete", async (req, res) => {
-    const { email } = req.body
 
-    //Validiert ob ein user bereits existiert
 
-    let user = users.find((user) => {
-        return user.email === email
-    })
 
-    if (!user) {
-        res.status(400).json({
-            errors: [
-                {
-                    "msg": "Email Adresse ist breits vergeben!",
-                }
-            ]
-        })
-    }
-    else {
-        users = users.filter((user) => {
-            return user.email !== email
-        })
-
-        res.json({
-            "msg": "User wurde erfolgreich gelöscht!",
-        })
-    }
-})
-
-// erstelle mir eine route um eine user zu updaten
-router.put("/update", async (req, res) => {
-    const { email, newemail, newpassword } = req.body
-
-    //Validiert ob ein user bereits existiert
-
-    let user = users.find((user) => {
-        return user.email === email
-    })
-
-    if (!user) {
-        res.status(400).json({
-            errors: [
-                {
-                    "msg": "Email Adresse ist breits vergeben!",
-                }
-            ]
-        })
-    }
-    else {
-        let hasdedpassword = await bcrypt.hash(newpassword, 10);
-
-        users = users.map((user) => {
-            if (user.email === email) {
-                return {
-                    email: newemail,
-                    password: hasdedpassword
-                }
-            }
-            else {
-                return user
-            }
-        })
-
-        res.json({
-            "msg": "User wurde erfolgreich geupdatet!",
-        })
-    }
-})
 
 module.exports = router
