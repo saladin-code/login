@@ -8,7 +8,7 @@ http://localhost:5000/users/delete/:id \
 http://localhost:5000/users/update/:id \
 \
 http://localhost:5000/auth/signup \
-http://localhost:5000/auth/login \
+http://localhost:5000/auth/login 
 
 
 # User Model
