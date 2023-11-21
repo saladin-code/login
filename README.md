@@ -9,7 +9,7 @@ http://localhost:5000/users/update/:id \
 \
 http://localhost:5000/auth/signup \
 http://localhost:5000/auth/login \
-\
+
 
 # User Model
    {\
