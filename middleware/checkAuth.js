@@ -14,7 +14,7 @@ module.exports = async (req, res, next) => {
             req.user = user;
             next();
         } catch (error) {
-            return res.status(400).json({ 'msg': 'Token ist nicht gültig' });
+            return res.status(400).json({ 'msg': 'Token ungültig' });
         }
     }
 

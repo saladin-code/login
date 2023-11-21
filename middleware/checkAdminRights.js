@@ -1,22 +1,15 @@
-const Users = require('../routes/users')
-const { users } = Users.users
+const User = require("../models/User");
 
 module.exports = async (req, res, next) => {
     const { email } = req.user;
 
-    let matchedUser = users.find((user) => {
-        if (user.email === email) {
-            return user;
-        }
-    })
+    const matchedUser = await User.findOne({ email });
     if (matchedUser.group !== "Admin")
         return res.status(400).json({ 'msg': 'Sie haben keine Admin berechtigung.' });
     else
-    {
-        req.user = matchedUser;
         next();
-    }
-        
+
+
 
 
 

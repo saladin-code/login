@@ -1,30 +1,35 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
-require('dotenv').config();
-const mongodb_uri = "mongodb+srv://saladin_code:uGW57mywTNWrmqjX@cluster0.dhcaihc.mongodb.net/?retryWrites=true&w=majority"//process.env.MONGODB_URI;
+const mongoose = require('mongoose');
 
-const client = new MongoClient(mongodb_uri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    }
-  });
+const mongodb_uri = "mongodb+srv://saladin_code:uGW57mywTNWrmqjX@cluster0.dhcaihc.mongodb.net/UserDatabase?retryWrites=true&w=majority"//process.env.MONGODB_URI;
 
-
-
-  async function run() {
+const connectDB = async () => {
     try {
-      // Connect the client to the server	(optional starting in v4.7)
-      await client.connect();
-      // Send a ping to confirm a successful connection
-      await client.db("admin").command({ ping: 1 });
-      console.log("Pinged your deployment. You successfully connected to MongoDB!");
-    } finally {
-      // Ensures that the client will close when you finish/error
-      await client.close();
+        await mongoose.connect(mongodb_uri, { useNewUrlParser: true, useUnifiedTopology: true });
+        console.log('MongoDB verbunden...');
+    } catch (err) {
+        console.error(err.message);
+        // Exit process with failure
+        process.exit(1);
     }
-  }
-  run().catch(console.dir);
+};
+
+module.exports = connectDB;
+
+
+
+  // async function run() {
+  //   try {
+  //     // Connect the client to the server	(optional starting in v4.7)
+  //     await client.connect();
+  //     // Send a ping to confirm a successful connection
+  //     await client.db("admin").command({ ping: 1 });
+  //     console.log("Pinged your deployment. You successfully connected to MongoDB!");
+  //   } finally {
+  //     // Ensures that the client will close when you finish/error
+  //     await client.close();
+  //   }
+  // }
+  // run().catch(console.dir);
 
 
 
@@ -109,3 +114,4 @@ const client = new MongoClient(mongodb_uri, {
 //     publicPosts,
 //     privatePosts
 // }
+

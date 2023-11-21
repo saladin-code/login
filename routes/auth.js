@@ -1,144 +1,75 @@
-const express = require("express")
-const router = express.Router()
-
-const { check, validationResult } = require("express-validator")
-
-const bcrypt = require("bcrypt")
-const JWT = require("jsonwebtoken")
-
-// const Users = require('./users')
-// const { users } = Users.users
-
-const User = require('../models/User')
-
 require('dotenv').config();
 
+const express = require("express");
+const router = express.Router();
+
+const { check, validationResult } = require("express-validator");
+
+const User = require("../models/User");
+
+const JWT = require("jsonwebtoken");
 const payload = process.env.PAYLOAD_KEY;
+const bcrypt = require("bcrypt");
 
 router.post("/signup", [
     check("email", "Geben Sie bitte eine valide email adresse an!").trim().isEmail(),
     check("password", "Geben Sie bitte ein valides password an!").trim()
-    .isLength({ min: 12 }).withMessage('Passwort muss mindestens 12 Zeichen lang sein.')
-    .matches(/[a-z]/).withMessage('Passwort muss mindestens einen Kleinbuchstaben enthalten.')
-    .matches(/[A-Z]/).withMessage('Passwort muss mindestens einen Grossbuchstaben enthalten.')
-    .matches(/[0-9]/).withMessage('Passwort muss mindestens eine Zahl enthalten.')
-    .matches(/[^a-zA-Z0-9]/).withMessage('Passwort muss mindestens ein Sonderzeichen enthalten.'),
-], 
-async (req, res) => {
-    const { password, email } = req.body
+        .isLength({ min: 12 }).withMessage('Passwort muss mindestens 12 Zeichen lang sein.')
+        .matches(/[a-z]/).withMessage('Passwort muss mindestens einen Kleinbuchstaben enthalten.')
+        .matches(/[A-Z]/).withMessage('Passwort muss mindestens einen Grossbuchstaben enthalten.')
+        .matches(/[0-9]/).withMessage('Passwort muss mindestens eine Zahl enthalten.')
+        .matches(/[^a-zA-Z0-9]/).withMessage('Passwort muss mindestens ein Sonderzeichen enthalten.'),
+],
+    async (req, res) => {
+        const { password, email } = req.body;
 
-    const errors = validationResult(req)
+        const errors = validationResult(req);
+        if (!errors.isEmpty())
+            return res.status(400).json({ errors: errors.array() });
+        try {
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(409).json({ errors: [{ "msg": "Email Adresse ist breits vergeben!" }] });
+            }
+            else {
+                let hasdedpassword = await bcrypt.hash(password, 10);
+                const token = await JWT.sign({ email }, payload, { expiresIn: "24h" });
+                const newUser = await User.create({ email, "password": hasdedpassword });
+                return res.status(201).json({ "msg": "User wurde erfolgreich erstellt!", "x-auth-token": token });
+            }
+        } catch {
+            return res.status(500).json({ errors: [{ "msg": "Fehler beim Speichern des Benutzers in der Datenbank" }] });
+        }
+    });
+
+router.post("/login", [
+    check("email", "Geben Sie bitte eine valide email adresse an!").trim().isEmail(),
+    check("password", "Geben Sie bitte ein valides password an!").trim().isLength({ min: 12 }),
+], async (req, res) => {
+
+    const { password, email } = req.body;
+
+    const errors = validationResult(req);
     if (!errors.isEmpty())
-        return res.status(400).json({ errors: errors.array() })
+        return res.status(400).json({ errors: errors.array() });
+    try {
+        const user = await User.findOne({ email });
 
-        // res.json({
-        //     "msg": "Test!",
-        //     "email": password
-        // })
-
-    let user = User.find({ email }).then(result => {
-        console.log(result)
-        return result
-    }).catch(err => {
-        console.log(err)
-        res.json({ "msg": "Fehler beim erstellen des Users!" })
-    })
-    console.log(user)
-    res.json({
-        "msg": "Test!",
-        "user": user
-    })
-
-    return
-    if (user)
-        res.status(400).json({ errors: [{ "msg": "Email Adresse ist breits vergeben!" }] })
-    else {
-        let hasdedpassword = await bcrypt.hash(password, 10);
-
-        const token = await JWT.sign({
-            email
-        }, payload, {
-            expiresIn: "24h"
-        })
-
-
-        users.push({
-            email,
-            password: hasdedpassword
-        })
-
-
-        res.json({
-            "msg": "User wurde erfolgreich erstellt!",
-            token
-        })
+        if (!user) {
+            return res.status(400).json({ errors: [{ "msg": "Ungültige Anmeldeinformationen!" }] });
+        }
+        else {
+            let isMatched = await bcrypt.compare(password, user.password);
+            if (!isMatched)
+                return res.status(400).json({ errors: [{ "msg": "Ungültige Anmeldeinformationen!" }] });
+            else {
+                const token = await JWT.sign({ email }, payload, { expiresIn: "24h" });
+                return res.status(200).json({ "msg": "User wurde erfolgreich eingeloggt", "x-auth-token": token });
+            }
+        }
+    } catch {
+        return res.status(400).json({ errors: [{ "msg": "Fehler beim Login!" }] });
     }
-})
+});
 
-
-// router.post("/login", [
-//     check("email", "Geben Sie bitte eine valide email adresse an!").isEmail(),
-//     check("password", "Geben Sie bitte ein valides password an!").isLength({ min: 6 }),
-// ], async (req, res) => {
-
-//     const { password, email } = req.body
-//     //Validiert den Input falls er nicht valide ist wird ein error zurückgegeben
-//     const errors = validationResult(req)
-//     if (!errors.isEmpty()) {
-//         return res.status(400).json({
-//             errors: errors.array()
-//         })
-//     }
-
-//     let user = users.find((user) => {
-//         return user.email === email
-//     })
-
-//     if (!user) {
-//         res.status(400).json({
-//             errors: [
-//                 {
-//                     "msg": "Invalid Credentials!",
-//                 }
-//             ]
-//         })
-//     }
-//     else {
-
-//         let isMatched = await bcrypt.compare(password, user.password);
-
-//         if (!isMatched) {
-//             res.status(400).json({
-//                 errors: [
-//                     {
-
-//                         "msg": "Login fehlgeschlagen!",
-//                     }
-//                 ]
-//             })
-//         }
-//         else {
-//             const token = await JWT.sign({
-//                 email
-//             }, payload, {
-//                 expiresIn: "24h"
-//             })
-
-//             res.json({
-//                 "msg": "User wurde erfolgreich eingeloggt!",
-//                 token
-//             })
-//         }
-
-//     }
-
-
-// })
-
-
-
-
-
-
-
-module.exports = router
+module.exports = router;
