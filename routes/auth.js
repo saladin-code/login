@@ -14,7 +14,7 @@ const bcrypt = require("bcrypt");
 router.post("/signup", [
     check("email", "Geben Sie bitte eine valide email adresse an!").trim().isEmail(),
     check("password", "Geben Sie bitte ein valides password an!").trim()
-        .isLength({ min: 12 }).withMessage('Passwort muss mindestens 12 Zeichen lang sein.')
+        .isLength({ min: 10 }).withMessage('Passwort muss mindestens 10 Zeichen lang sein.')
         .matches(/[a-z]/).withMessage('Passwort muss mindestens einen Kleinbuchstaben enthalten.')
         .matches(/[A-Z]/).withMessage('Passwort muss mindestens einen Grossbuchstaben enthalten.')
         .matches(/[0-9]/).withMessage('Passwort muss mindestens eine Zahl enthalten.')
